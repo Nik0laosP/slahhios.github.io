@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Storehouse App</title>
+  <style>
+   body {
+  font-family: Arial, sans-serif;
+  background-color: #222;
+  color: #fff;
+}
+
+.container {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #333;
+  border-radius: 8px;
+}
+
+input[type="text"] {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px;
+  box-sizing: border-box;
+  background-color: #444;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  margin-bottom: 10px;
+  border-radius: 4px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+#productList {
+  margin-top: 20px;
+  list-style: none;
+  padding: 0;
+}
+
+#productList li {
+  margin-bottom: 5px;
+}
+
+#searchResult {
+  margin-top: 10px;
+}
+
+/* Darker theme for autocomplete items */
+.autocomplete-item {
+  cursor: pointer;
+  padding: 5px;
+  background-color: #555;
+  color: #fff;
+}
+
+.autocomplete-item:hover {
+  background-color: #777;
+}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Storehouse App</h2>
+    <input type="text" id="productCode" placeholder="Enter product code or name">
+    <input type="text" id="locationType" placeholder="Enter location type (e.g., 1-right-3-down)">
+    <button onclick="storeLocation()">Store Location</button>
+    <div id="location" style="margin-top: 10px;"></div>
+    
+    <h3>Product List</h3>
+    <button id="toggleButton" onclick="toggleProductList()">Toggle Product List Visibility</button>
+    <ul id="productList" style="display: none;"></ul>
+
+    <h3>Search Product</h3>
+    <input type="text" id="searchInput" placeholder="Enter product code or name to search">
+    <button onclick="searchProduct()">Search</button>
+    <div id="searchResult" style="margin-top: 10px;"></div>
+  </div>
+
+  <script>
+   function storeLocation() {
+  var productCode = document.getElementById('productCode').value.trim();
+  var locationType = document.getElementById('locationType').value.trim();
+  var locationDiv = document.getElementById('location');
+
+  // Validate input
+  if (productCode && /^\d-(?:left|right)-\d-(?:up|down)$/.test(locationType)) {
+    // Store product information in localStorage
+    localStorage.setItem(productCode, JSON.stringify({ locationType: locationType }));
+
+    // Display stored location
+    locationDiv.textContent = 'Location stored successfully: ' + locationType;
+    locationDiv.style.color = 'green';
+
+    // Update product list regardless of visibility state
+    var productList = document.getElementById('productList');
+    var productListItem = document.createElement('li');
+    productListItem.setAttribute('id', 'product-' + productCode);
+    productListItem.textContent = 'Product Code/Name: ' + productCode + ', Location Type: ' + locationType;
+    
+    // Add delete button
+    var deleteButton = document.createElement('button');
+    deleteButton.textContent = 'Delete';
+    deleteButton.addEventListener('click', function() {
+      deleteProduct(productCode);
+    });
+
+    productListItem.appendChild(deleteButton);
+    productList.appendChild(productListItem);
+
+    // Clear input fields
+    document.getElementById('productCode').value = '';
+    document.getElementById('locationType').value = '';
+  } else {
+    // Invalid input
+    locationDiv.textContent = 'Invalid input. Please enter a product code or name and a valid location type (e.g., 1-right-down).';
+    locationDiv.style.color = 'red';
+  }
+}
+
+
+
+    function deleteProduct(productCode) {
+      // Remove product from localStorage
+      localStorage.removeItem(productCode);
+
+      // Remove product entry from UI
+      var productList = document.getElementById('productList');
+      var productItem = document.getElementById('product-' + productCode);
+      productList.removeChild(productItem);
+    }
+
+    function searchProduct() {
+  var searchInput = document.getElementById('searchInput').value.trim().toLowerCase();
+  var searchResultDiv = document.getElementById('searchResult');
+  var productList = document.getElementById('productList');
+
+  // Clear previous search results
+  searchResultDiv.innerHTML = '';
+
+  // Iterate through localStorage items
+  for (var i = 0; i < localStorage.length; i++) {
+    var productCode = localStorage.key(i).toLowerCase();
+    var productData = JSON.parse(localStorage.getItem(productCode));
+
+    // Check if the product code or name starts with the search input
+    if (productCode.startsWith(searchInput)) {
+      var productListItem = document.createElement('li');
+      productListItem.textContent = 'Product Code/Name: ' + localStorage.key(i) + ', Location Type: ' + productData.locationType;
+      
+      // Add delete button
+      var deleteButton = document.createElement('button');
+      deleteButton.textContent = 'Delete';
+      deleteButton.addEventListener('click', function() {
+        deleteProduct(localStorage.key(i));
+      });
+
+      productListItem.appendChild(deleteButton);
+      searchResultDiv.appendChild(productListItem);
+    }
+  }
+
+  // If no results found, display message
+  if (searchResultDiv.children.length === 0) {
+    var noResultMessage = document.createElement('p');
+    noResultMessage.textContent = 'No matching products found.';
+    searchResultDiv.appendChild(noResultMessage);
+  }
+}
+
+
+    function toggleProductList() {
+  var productList = document.getElementById('productList');
+  var toggleButton = document.getElementById('toggleButton');
+  if (productList.style.display === 'none') {
+    productList.style.display = 'block';
+    toggleButton.textContent = 'Hide Product List';
+  } else {
+    productList.style.display = 'none';
+    toggleButton.textContent = 'Show Product List';
+  }
+}
+
+
+    // Populate product list on page load
+    window.onload = function() {
+      var productList = document.getElementById('productList');
+      // Iterate through localStorage items
+      for (var i = 0; i < localStorage.length; i++) {
+        var productCode = localStorage.key(i);
+        var productData = JSON.parse(localStorage.getItem(productCode));
+        var productListItem = document.createElement('li');
+        productListItem.setAttribute('id', 'product-' + productCode);
+        productListItem.textContent = 'Product Code/Name: ' + productCode + ', Location Type: ' + productData.locationType;
+        
+        // Add delete button
+        var deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        // Use an immediately-invoked function expression (IIFE) to capture the current value of productCode
+        deleteButton.addEventListener('click', (function(code) {
+          return function() {
+            deleteProduct(code);
+          };
+        })(productCode));
+
+        productListItem.appendChild(deleteButton);
+        productList.appendChild(productListItem);
+      }
+    };
+  </script>
+</body>
+</html>
